@@ -1,0 +1,10 @@
+name: "classic-en"
+type: cover_letter
+description:
+  fr: "Lettre de motivation anglo-saxonne — 3 paragraphes, ton confident."
+  en: "Anglo cover letter — 3 paragraphs, confident tone."
+template_language: en
+supported_languages: [en]
+version: 1
+ats_compliant: true
+sections_supported: [sender, recipient, date, objet, opening, fit, motivation, signature]

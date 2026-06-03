@@ -1,0 +1,98 @@
+# GitLab CI/CD for career-hub.
+# Stages: lint → test (unit, needs Postgres) → e2e (Playwright, mock LLM) →
+# build (Docker image pushed to the project Container Registry, main only).
+#
+# NOTE (authored, not yet run in CI): no GitLab runner was available during
+# authoring. The Docker build + container boot were validated locally.
+
+stages:
+  - lint
+  - test
+  - e2e
+  - build
+
+variables:
+  POSTGRES_DB: career_hub
+  POSTGRES_USER: career
+  POSTGRES_PASSWORD: ci_password
+  CI_DATABASE_URL: "postgres://career:ci_password@postgres:5432/career_hub"
+  NEXT_TELEMETRY_DISABLED: "1"
+
+# Cache Bun's global package cache keyed on the lockfile.
+.bun_cache: &bun_cache
+  key:
+    files:
+      - bun.lock
+  paths:
+    - ~/.bun/install/cache
+
+# ---------------------------------------------------------------------------
+lint:
+  stage: lint
+  image: oven/bun:1.3-slim
+  cache: *bun_cache
+  script:
+    - bun install --frozen-lockfile
+    - bun run lint
+
+# ---------------------------------------------------------------------------
+test:
+  stage: test
+  image: oven/bun:1.3-slim
+  cache: *bun_cache
+  services:
+    - name: pgvector/pgvector:pg18
+      alias: postgres
+  variables:
+    DATABASE_URL: $CI_DATABASE_URL
+  script:
+    - bun install --frozen-lockfile
+    - bunx prisma migrate deploy
+    - bun run db:seed
+    - bun run test:unit
+
+# ---------------------------------------------------------------------------
+e2e:
+  stage: e2e
+  image: oven/bun:1.3 # full image (apt available for Playwright deps)
+  cache: *bun_cache
+  services:
+    - name: pgvector/pgvector:pg18
+      alias: postgres
+  variables:
+    DATABASE_URL: $CI_DATABASE_URL
+    E2E_DATABASE_URL: $CI_DATABASE_URL
+    CI: "true"
+  script:
+    - bun install --frozen-lockfile
+    - bunx prisma migrate deploy
+    - bun run db:seed
+    - bunx playwright install --with-deps chromium
+    # Playwright's webServer (playwright.config.ts) boots the app against
+    # E2E_DATABASE_URL with AUTH_ENABLED=false + LLM_FORCE_MOCK=true.
+    - bunx playwright test
+  artifacts:
+    when: always
+    paths:
+      - playwright-report/
+    reports:
+      junit: playwright-report/junit.xml
+    expire_in: 1 week
+
+# ---------------------------------------------------------------------------
+# Build the Docker image and push it to the project's Container Registry.
+# Uses the GitLab-provided $CI_REGISTRY_* credentials — no secrets to set.
+build:image:
+  stage: build
+  image: docker:27-cli
+  services:
+    - docker:27-dind
+  variables:
+    DOCKER_TLS_CERTDIR: "/certs"
+  rules:
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+  script:
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
+    - docker build --pull -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA" -t "$CI_REGISTRY_IMAGE:latest" .
+    - docker push "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA"
+    - docker push "$CI_REGISTRY_IMAGE:latest"

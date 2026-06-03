@@ -1,0 +1,77 @@
+@import "../styles/tokens.css";
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap");
+@import "@mantine/core/styles.css";
+@import "@mantine/notifications/styles.css";
+@import "@mantine/dates/styles.css";
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--ch-bg-0);
+  color: var(--ch-fg-1);
+  font-family: var(--ch-font-ui);
+  font-size: var(--ch-font-body, 13.5px);
+  line-height: var(--ch-line-body, 1.55);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  min-height: 100vh;
+}
+
+::selection {
+  background: var(--ch-accent-bg-strong);
+  color: var(--ch-fg-1);
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--ch-border-m);
+  border-radius: 10px;
+  border: 2px solid var(--ch-bg-0);
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--ch-border-l);
+}
+
+.mono {
+  font-family: var(--ch-font-mono);
+}
+.muted {
+  color: var(--ch-fg-3);
+}
+.subtle {
+  color: var(--ch-fg-2);
+}
+
+/* Animations ported from the design system (spinners, transitions, etc.) */
+@keyframes ch-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.ch-spin {
+  animation: ch-spin 0.9s linear infinite;
+}
+
+@keyframes ch-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+.ch-pulse {
+  animation: ch-pulse 1.4s ease-in-out infinite;
+}

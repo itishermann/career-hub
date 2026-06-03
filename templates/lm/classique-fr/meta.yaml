@@ -1,0 +1,10 @@
+name: "classique-fr"
+type: cover_letter
+description:
+  fr: "Lettre de motivation française classique — 3 paragraphes, signature sobre."
+  en: "Classic French cover letter — 3 paragraphs, sober signature."
+template_language: fr
+supported_languages: [fr]
+version: 1
+ats_compliant: true
+sections_supported: [sender, recipient, date, objet, opening, fit, motivation, signature]

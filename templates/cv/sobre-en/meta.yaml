@@ -1,0 +1,17 @@
+name: "sobre-en"
+type: cv
+description:
+  fr: "Format anglo-saxon classique, mono-colonne — ATS-friendly."
+  en: "Classic Anglo single-column layout — ATS-friendly."
+template_language: en
+supported_languages: [en]
+version: 1
+ats_compliant: true
+sections_supported: [identity, pitch, experiences, education, skills, languages, interests]
+labels:
+  en:
+    experiences: "Experience"
+    education: "Education"
+    skills: "Technical skills"
+    languages: "Languages"
+    interests: "Interests"

@@ -1,0 +1,449 @@
+// Prisma schema — career-hub
+// Source of truth = CLAUDE.md (AGENTS.md) section 5.
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  extensions = [pgvector(map: "vector")]
+}
+
+// ---------------------------------------------------------------------------
+// USERS, AUTH, API TOKENS
+// ---------------------------------------------------------------------------
+
+model User {
+  id                  String   @id @default(cuid())
+  email               String   @unique
+  name                String?
+  role                UserRole @default(USER)
+  uiLocale            String   @default("fr")
+  density             String   @default("dense")
+  colorScheme         String   @default("dark")
+  llmConfig           Json     @default("{}")
+  onboardingCompleted Boolean  @default(false)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  apiTokens              ApiToken[]
+  profileSections        ProfileSection[]
+  experiences            Experience[]
+  skills                 Skill[]
+  education              Education[]
+  projects               Project[]
+  journalEntries         JournalEntry[]
+  templates              Template[]
+  campaigns              Campaign[]
+  generations            Generation[]
+  profileSnapshots       ProfileSnapshot[]
+  jobs                   Job[]
+  translationSuggestions TranslationSuggestion[]
+  identity               ProfileIdentity?
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+model ApiToken {
+  id         String    @id @default(cuid())
+  userId     String
+  name       String
+  tokenHash  String    @unique
+  scopes     String[]
+  expiresAt  DateTime?
+  lastUsedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// Better Auth tables (managed by Better Auth Prisma adapter)
+model Session {
+  id        String   @id
+  userId    String
+  expiresAt DateTime
+  token     String   @unique
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime
+  updatedAt DateTime
+
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime
+  updatedAt             DateTime
+
+  @@map("account")
+}
+
+model Verification {
+  id         String    @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime?
+  updatedAt  DateTime?
+
+  @@map("verification")
+}
+
+// ---------------------------------------------------------------------------
+// PROFILE — sections, identity, structured tables
+// ---------------------------------------------------------------------------
+
+model ProfileIdentity {
+  id              String    @id @default(cuid())
+  userId          String    @unique
+  fullName        String
+  birthDate       DateTime?
+  birthPlace      String?
+  nationality     String?
+  residencyStatus String?
+  address         String?
+  email           String?
+  phone           String?
+  linkedinUrl     String?
+  githubUrl       String?
+  portfolioUrl    String?
+  handle          String?
+  mobility        String?
+  drivingLicence  String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ProfileSection {
+  id          String   @id @default(cuid())
+  userId      String
+  sectionType String
+  contentMd   Json
+  metadata    Json?
+  isCurrent   Boolean  @default(true)
+  version     Int      @default(1)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, sectionType, version])
+  @@index([userId, isCurrent])
+}
+
+model Experience {
+  id           String    @id @default(cuid())
+  userId       String
+  company      String
+  role         String
+  status       String
+  location     String?
+  startDate    DateTime
+  endDate      DateTime?
+  description  Json
+  achievements Json
+  technologies String[]
+  orderIndex   Int       @default(0)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, endDate])
+}
+
+model Skill {
+  id              String  @id @default(cuid())
+  userId          String
+  category        String
+  name            String
+  level           String?
+  yearsExperience Float?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, category, name])
+}
+
+model Education {
+  id        String    @id @default(cuid())
+  userId    String
+  school    String
+  diploma   Json
+  field     Json?
+  location  String?
+  startDate DateTime
+  endDate   DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Project {
+  id           String   @id @default(cuid())
+  userId       String
+  name         String
+  description  Json
+  technologies String[]
+  url          String?
+  year         Int
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ---------------------------------------------------------------------------
+// JOURNAL + FACTS (RAG)
+// ---------------------------------------------------------------------------
+
+model JournalEntry {
+  id               String                      @id @default(cuid())
+  userId           String
+  content          String
+  language         String
+  contentEmbedding Unsupported("vector(768)")?
+  reconciled       Boolean                     @default(false)
+  reconciledAt     DateTime?
+  createdAt        DateTime                    @default(now())
+
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  extractedFacts ExtractedFact[]
+
+  @@index([userId, createdAt])
+  @@index([userId, reconciled])
+}
+
+model ExtractedFact {
+  id              String    @id @default(cuid())
+  journalEntryId  String
+  factType        String
+  factContent     Json
+  applied         Boolean   @default(false)
+  appliedAt       DateTime?
+  rejectedAt      DateTime?
+  rejectionReason String?
+  createdAt       DateTime  @default(now())
+
+  journalEntry JournalEntry @relation(fields: [journalEntryId], references: [id], onDelete: Cascade)
+
+  @@index([journalEntryId])
+  @@index([applied])
+}
+
+// ---------------------------------------------------------------------------
+// TEMPLATES (Typst)
+// ---------------------------------------------------------------------------
+
+model Template {
+  id                 String       @id @default(cuid())
+  userId             String?
+  name               String       @unique
+  type               TemplateType
+  templateLanguage   String
+  supportedLanguages String[]
+  description        Json?
+  typstSource        String
+  meta               Json
+  isDefault          Boolean      @default(false)
+  version            Int          @default(1)
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  user        User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+  versions    TemplateVersion[]
+  generations Generation[]
+}
+
+enum TemplateType {
+  CV
+  COVER_LETTER
+}
+
+model TemplateVersion {
+  id          String   @id @default(cuid())
+  templateId  String
+  typstSource String
+  meta        Json
+  version     Int
+  createdAt   DateTime @default(now())
+
+  template Template @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@unique([templateId, version])
+}
+
+// ---------------------------------------------------------------------------
+// CAMPAIGNS + GENERATIONS
+// ---------------------------------------------------------------------------
+
+model Campaign {
+  id             String         @id @default(cuid())
+  userId         String
+  name           String
+  targetCompany  String?
+  targetRole     String?
+  targetLanguage String         @default("fr")
+  jobDescription String?
+  contactEmail   String?
+  contactName    String?
+  status         CampaignStatus @default(DRAFT)
+  notes          String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  user        User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  generations Generation[]
+  atsKeywords CampaignAtsKeywords?
+
+  @@index([userId, updatedAt])
+}
+
+enum CampaignStatus {
+  DRAFT
+  SENT
+  RESPONDED
+  INTERVIEWING
+  REJECTED
+  ACCEPTED
+  WITHDRAWN
+}
+
+model CampaignAtsKeywords {
+  id          String   @id @default(cuid())
+  campaignId  String   @unique
+  jdHash      String
+  keywords    Json
+  llmProvider String
+  llmModel    String
+  extractedAt DateTime @default(now())
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+}
+
+model ProfileSnapshot {
+  id        String   @id @default(cuid())
+  userId    String
+  snapshot  Json
+  reason    String
+  createdAt DateTime @default(now())
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  generations Generation[]
+
+  @@index([userId, createdAt])
+}
+
+model Generation {
+  id                String       @id @default(cuid())
+  userId            String
+  campaignId        String?
+  templateId        String
+  profileSnapshotId String
+  type              TemplateType
+  language          String
+  llmProvider       String
+  llmModel          String
+  llmPrompt         String
+  outputTypst       String
+  outputPdfPath     String?
+  compileError      String?
+  atsScore          Json?
+  durationMs        Int
+  inputTokens       Int?
+  outputTokens      Int?
+  costCents         Float?
+  createdAt         DateTime     @default(now())
+
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  campaign        Campaign?       @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  template        Template        @relation(fields: [templateId], references: [id])
+  profileSnapshot ProfileSnapshot @relation(fields: [profileSnapshotId], references: [id])
+
+  @@index([userId, createdAt])
+  @@index([campaignId])
+}
+
+// ---------------------------------------------------------------------------
+// BACKGROUND JOB QUEUE
+// ---------------------------------------------------------------------------
+
+model Job {
+  id              String    @id @default(cuid())
+  userId          String
+  type            JobType
+  status          JobStatus @default(QUEUED)
+  payload         Json
+  progress        Int       @default(0)
+  step            String?
+  result          Json?
+  error           String?   @db.Text
+  attempts        Int       @default(0)
+  maxAttempts     Int       @default(2)
+  cancelRequested Boolean   @default(false)
+  queuedAt        DateTime  @default(now())
+  startedAt       DateTime?
+  finishedAt      DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status, queuedAt])
+  @@index([userId, createdAt])
+}
+
+enum JobType {
+  CV_GENERATION
+  LM_GENERATION
+  CV_IMPROVEMENT
+  FACT_EXTRACTION
+  ATS_SCORING
+  TRANSLATION
+}
+
+/// Proposed translation of a profile localized field, awaiting user validation.
+/// Never auto-applied (CLAUDE.md i18n rule). Produced by the TRANSLATION job.
+model TranslationSuggestion {
+  id            String    @id @default(cuid())
+  userId        String
+  entityType    String // "section" | "experience" | "education" | "project"
+  entityId      String
+  field         String // "contentMd" | "description" | "diploma" | "field"
+  sourceLang    String
+  targetLang    String
+  sourceText    String    @db.Text
+  suggestedText String    @db.Text
+  status        String    @default("PENDING") // PENDING | APPLIED | REJECTED
+  createdAt     DateTime  @default(now())
+  appliedAt     DateTime?
+  rejectedAt    DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+  @@index([entityType, entityId, field, targetLang])
+}
+
+enum JobStatus {
+  QUEUED
+  RUNNING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+}

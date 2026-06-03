@@ -1,0 +1,25 @@
+services:
+  db:
+    image: pgvector/pgvector:pg18
+    container_name: career-hub-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: career_hub
+      POSTGRES_USER: career
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-dev-password}
+    ports:
+      - "5432:5432"
+    volumes:
+      # pg18 stores data in /var/lib/postgresql/<major>/docker, so we mount the
+      # parent dir as recommended by the official image notes.
+      - db-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U career -d career_hub"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # See `docs/deployment.md` for the production compose with app + Caddy.
+
+volumes:
+  db-data:

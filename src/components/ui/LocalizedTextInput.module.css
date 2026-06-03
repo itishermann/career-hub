@@ -1,0 +1,73 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tabsRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tabs {
+  display: inline-flex;
+  background: var(--ch-bg-input);
+  border: 1px solid var(--ch-border-s);
+  border-radius: var(--ch-r-md);
+  padding: 2px;
+  gap: 2px;
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ch-fg-2);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background 100ms ease;
+}
+
+.tab:hover {
+  background: var(--ch-bg-hover);
+}
+
+.tab[data-active="true"] {
+  background: var(--ch-bg-1);
+  color: var(--ch-fg-1);
+  box-shadow: 0 1px 0 var(--ch-border-s);
+}
+
+.tabBadge {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--ch-bg-hover);
+  color: var(--ch-fg-3);
+}
+
+.tabBadge[data-filled="true"] {
+  background: var(--ch-success-bg);
+  color: var(--ch-success);
+}
+
+.tabBadge[data-filled="false"] {
+  background: var(--ch-warning-bg);
+  color: var(--ch-warning);
+}
+
+.translateBtn {
+  margin-left: auto;
+}
+
+.hint {
+  font-size: 11.5px;
+  color: var(--ch-fg-3);
+}

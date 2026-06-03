@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>career-hub — prototype</title>
+  <!-- build: app-shell internal scroll v2 -->
+  <link rel="stylesheet" href="theme.css" />
+</head>
+<body>
+  <div id="root"></div>
+
+  <script>
+    // Swallow harmless ResizeObserver loop warnings if the browser still emits
+    // them (e.g. due to ongoing CSS animations). Not a real error.
+    (function() {
+      const RO_RE = /ResizeObserver loop/;
+      window.addEventListener('error', (e) => {
+        if (e && e.message && RO_RE.test(e.message)) {
+          e.stopImmediatePropagation();
+          e.preventDefault();
+          return false;
+        }
+      }, true);
+      const origErr = console.error;
+      console.error = function(...args) {
+        if (args.length && typeof args[0] === 'string' && RO_RE.test(args[0])) return;
+        return origErr.apply(this, args);
+      };
+      // Replace ResizeObserver with a no-op stub: nothing in this prototype
+      // genuinely needs it, and the host's preview pane resizing kept tripping
+      // the harmless-but-noisy "ResizeObserver loop" warning.
+      window.ResizeObserver = function() {
+        return { observe() {}, unobserve() {}, disconnect() {} };
+      };
+    })();
+  </script>
+
+  <!-- React + Babel pinned (per house rules) -->
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <!-- Order matters: shell first (icons, mocks), then signature components (used by pages),
+       then each page, then tweaks panel, then app -->
+  <script type="text/babel" data-presets="react" src="shell.jsx"></script>
+  <script type="text/babel" data-presets="react" src="signature.jsx"></script>
+  <script type="text/babel" data-presets="react" src="responsive.jsx"></script>
+  <script type="text/babel" data-presets="react" src="feedback.jsx"></script>
+  <script type="text/babel" data-presets="react" src="states.jsx"></script>
+  <script type="text/babel" data-presets="react" src="page-login.jsx"></script>
+  <script type="text/babel" data-presets="react" src="page-onboarding.jsx"></script>
+  <script type="text/babel" data-presets="react" src="page-dashboard.jsx"></script>
+  <script type="text/babel" data-presets="react" src="page-profile.jsx"></script>
+  <script type="text/babel" data-presets="react" src="page-journal.jsx"></script>
+  <script type="text/babel" data-presets="react" src="page-campaign.jsx"></script>
+  <script type="text/babel" data-presets="react" src="page-campaigns-list.jsx"></script>
+  <script type="text/babel" data-presets="react" src="page-campaign-new.jsx"></script>
+  <script type="text/babel" data-presets="react" src="page-generation.jsx"></script>
+  <script type="text/babel" data-presets="react" src="page-generations-list.jsx"></script>
+  <script type="text/babel" data-presets="react" src="page-templates.jsx"></script>
+  <script type="text/babel" data-presets="react" src="page-settings.jsx"></script>
+  <script type="text/babel" data-presets="react" src="tweaks-panel.jsx"></script>
+  <script type="text/babel" data-presets="react" src="app.jsx"></script>
+</body>
+</html>

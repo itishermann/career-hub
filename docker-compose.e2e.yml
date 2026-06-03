@@ -1,0 +1,22 @@
+# Ephemeral Postgres (pgvector) for E2E tests. Data lives in tmpfs so it is
+# wiped when the container stops — E2E never touches the real dev/prod DB.
+# Exposed on 15433 to avoid clashing with the dev DB.
+services:
+  db-e2e:
+    image: pgvector/pgvector:pg18
+    environment:
+      POSTGRES_DB: career_hub
+      POSTGRES_USER: career
+      POSTGRES_PASSWORD: e2e_password
+      # pg18 images default PGDATA to a versioned dir; pin it to a subdir of the
+      # tmpfs mount so the ephemeral data dir works (mount point can't be PGDATA).
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "15433:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U career -d career_hub"]
+      interval: 2s
+      timeout: 3s
+      retries: 30

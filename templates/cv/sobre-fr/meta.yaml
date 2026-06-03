@@ -1,0 +1,35 @@
+name: "sobre-fr"
+type: cv
+description:
+  fr: "Format français classique, mono-colonne, accent magenta — ATS-friendly."
+  en: "Classic French layout, single-column, magenta accent — ATS-friendly."
+template_language: fr
+supported_languages: [fr]
+version: 1
+ats_compliant: true
+variables:
+  - name: accent_color
+    type: color
+    default: "#c4006d"
+  - name: show_photo
+    type: boolean
+    default: false
+  - name: page_size
+    type: enum
+    values: [a4, letter]
+    default: a4
+sections_supported:
+  - identity
+  - pitch
+  - experiences
+  - education
+  - skills
+  - languages
+  - interests
+labels:
+  fr:
+    experiences: "Expériences professionnelles"
+    education: "Formation"
+    skills: "Compétences techniques"
+    languages: "Langues"
+    interests: "Centres d'intérêt"
